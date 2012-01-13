@@ -1,11 +1,11 @@
 <?php
 /**
-* @Author Jason Cowdy & Katie Zagorski
+* @Autho Shohei Yokoyama
 * @Date: 5/6/11
-* @comments KMeans based on work by claudio Brandolino and Federica Recantini
+* @comments Multi-Dimension KMeans based on work by Jason Cowdy & Katie Zagorski
 */
 
-define("JITTER", 2);
+
 
 /**
 * Clusters points using the kmeans clustering algorithm
@@ -16,7 +16,11 @@ define("JITTER", 2);
 function kmeans($data, $k) {
 	if($k <= 0)
 	{
-		echo "<div class=\"error span-15\">ERROR: K must be a positive integer greater than 0</div>";
+		echo "ERROR: K must be a positive integer greater than 0";
+		exit(0);
+	}
+	if(count($data) == 0 or !is_array($data[1])){
+		echo "ERROR: data must be a array(array(axis1,axis2,axis3...),...)";
 		exit(0);
 	}
         $oldCentroids = randomCentroids($data, $k);
@@ -24,16 +28,21 @@ function kmeans($data, $k) {
 	{
 		$clusters = assign_points($data, $oldCentroids, $k);
 		$newCentroids = calcCenter($clusters, $data);
-		if ($oldCentroids === $newCentroids)
+		if(issame($oldCentroids,$newCentroids))
 		{
-			return(array ($newCentroids, $clusters));
+			return(array ("centroids" => $newCentroids, "clusters" => $clusters));
 		}
 		$oldCentroids = $newCentroids;
 	}
 }
 
 
-
+/**
+* Calculate cluster's center
+* @param array $clusters k-clusters
+* @param array $data the data points to cluster
+* @return array cluster's center
+*/
 function calcCenter($clusters, $data)
 {
 	foreach($clusters as $num_cluster => $cluster_elements)
@@ -59,13 +68,20 @@ function calcCenter($clusters, $data)
 */
 function recenter($coords)
 {
+	$dim = count($coords[0]);
+	$axis = array();
 	foreach ($coords as $k)
 	{
-		$x = $x + $k[0];
-		$y = $y + $k[1];
+		for($a = 0; $a < $dim; $a++){
+			if(!isset($axis[$a])){
+				$axis[$a] = 0;
+			}
+			$axis[$a] += $k[$a];
+		}
 	}
-	$center[0] = round($x / count($coords),2);
-	$center[1] = round($y / count($coords),2);
+	for($a = 0; $a < $dim; $a++){
+		$center[$a] = round($axis[$a] / count($coords),2);
+	}
 	return $center;
 }
 
@@ -79,10 +95,39 @@ function recenter($coords)
 */
 function dist($v1, $v2)
 {
-	$x = abs($v1[0] - $v2[0]);
-	$y = abs($v1[1] - $v2[1]);
-	return round(sqrt(($x * $x) + ($y * $y)),2);
+	$dim = count($v1);
+	$d = array();
+	for($a = 0; $a < $dim; $a++){
+		$d[] = pow(abs($v1[$a] - $v2[$a]),2);
+	}
+	return round(sqrt(array_sum($d)),2);
 }
+
+
+
+/**
+* return true if $v1 and $v2 are the same
+* @param array $v1 The array of centroids
+* @param array $v2 The array of centroids
+* @return boolean same or not
+*/
+function issame($v1, $v2){
+	$num = count($v1);
+	$dim = count($v1[0]);
+	for($n = 0; $n < $num; $n++ ){
+		if(isset($v1[$n]) and isset($v2[$n])){
+			for($d = 0; $d < $dim; $d++ ){
+				if(!isset($v1[$n][$d]) or !isset($v2[$n][$d]) or $v1[$n][$d] != $v2[$n][$d]){
+					return false;
+				}
+			}
+		}else{
+			return false;
+		}
+	}
+	return true;
+}
+
 
 
 /**
@@ -93,6 +138,7 @@ function dist($v1, $v2)
 */
 function assign_points($data, $centroids, $k)
 {
+	$dim = count($data[0]);
 	foreach ($data as $datum_index => $datum)
 	{
 		foreach ($centroids as $centroid)
@@ -120,7 +166,7 @@ function assign_points($data, $centroids, $k)
 					$clusters[$k+1][] = $tentative_element;
 				}
 				else $clusters[$tentative_index][] = $tentative_element;
-			}			
+			}
 		}
 	}
 	else
@@ -136,21 +182,26 @@ function assign_points($data, $centroids, $k)
 * Creates random starting clusters between the max and min of the data values
 * @param $data array An array containing the 
 * @param $k int The number of clusters
-*/ 
+*/
 function randomCentroids($data, $k) {
+	$axis = array();
+	$dim = count($data[0]);
 	foreach ($data as $j)
 	{
-		$x[] = $j[0];
-		$y[] = $j[1];
+		for($a = 0; $a < $dim; $a++){
+			$axis[$a][] = $j[$a];
+		}
 	}
-    
-	for($k; $k > 0; $k--)
+	$centroids = array();
+	for($kk = 0; $kk < $k; $kk++)
 	{
-                $centroids[$k][0] = rand(min($x), max($x));
-                $centroids[$k][1] = rand(min($y), max($y));
-    }
+		for($a = 0; $a < $dim; $a++){
+                	$centroids[$kk][$a] = rand(min($axis[$a]), max($axis[$a]));
+                }
+    	}
         return $centroids;
 }
+
 
 
 /**
@@ -177,69 +228,21 @@ function max_key($array){
 	}
 }
 
-/**
-* Gets the max values of a two dimentional array
+/*
+ 	USAGE:
+
+		$result = kmeans(array(
+			array(1,2,3,4,5),
+			array(1,2,3,4,4),
+			array(2,3,4,5,6),
+			array(1,3,4,5,6),
+			array(10,20,30,40,50),
+			array(1,5,4,3,2),
+			array(1.2,1.4,1.6,1.3,1.5)
+		),3);
+		echo "CENTROIDS:";
+		print_r($result["centroids"]);
+		echo "CLUSTERS:";
+		print_r($result["clusters"]);
 */
-function max_value($array){
-	$x; $y;
-	foreach($array as $row)
-	{
-		if($row[0] > $x)
-			$x = $row[0];
-		if($row[1] > $y)
-			$y = $row[1];
-	}
-	return array($x, $y);
-}
-
-/**
-* Loads data from MySQL into an array
-* @param $column1 string The name of the first MySQL field to use
-* @param $column2 string The name of the second MySQL field to use
-* @return array The data loaded into two dimensional array, col1 is the first value, followed by col2
-*/
-function loadData($column1, $column2)
-{
-	if(0 == strcmp($column1, $column2))
-		$query = "SELECT $column1 from " . TABLE  ." LIMIT 100";
-	else
-	    $query = "SELECT $column1, $column2 from " . TABLE . " LIMIT 100";
-
-    $result = mysql_query($query);
-    while($row = mysql_fetch_assoc($result))
-    {
-            $data[$i] = array($row[$column1], $row[$column2]);
-                $i++;
-    }
-	
-    return $data;
-}
-
-/**
-* Adds jitter for visualization
-* @param array $data The array of data to add jitter to
-* @return array An array of data with jitter added to its points
-*/
-function addJitter($data)
-{
-		$max = max_value($data);
-		$i = 0;
-	foreach($data as $k)
-	{
-		if(rand(0,1))
-			$data[$i][0] = $k[0] + ($max[0] * (rand(0,15)/1000));
-		else
-			$data[$i][0] = $k[0] - ($max[0] * (rand(0,15)/1000));
-		
-
-		if(rand(0,1))
-			$data[$i][1] = $k[1] + ($max[1] * (rand(0,15)/1000));
-		else
-			$data[$i][1] = $k[1] - ($max[1] * (rand(0,15)/1000));
-
-		$i++;
-	}			
-		return $data;
-}
-
 ?>
