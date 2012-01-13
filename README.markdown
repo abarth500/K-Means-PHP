@@ -1,13 +1,11 @@
-###abarth500 / K-Means-PHP==
+##abarth500 / K-Means-PHP
 n-dimensional k-Means function for PHP.
 
 https://github.com/abarth500/K-Means-PHP
 
 
-###Usage===
+##Usage
 <pre><code>
-<?php
-
 include_once(kmeans.php);
 
 $result = kmeans(array(
@@ -24,6 +22,4 @@ echo "CENTROIDS:";
 print_r($result["centroids"]);
 echo "CLUSTERS:";
 print_r($result["clusters"]);
-
-?>
 </code></pre>
