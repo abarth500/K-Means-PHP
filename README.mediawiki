@@ -22,4 +22,4 @@ print_r($result["centroids"]);
 echo "CLUSTERS:";
 print_r($result["clusters"]);
 ?>
-</code>
+</pre>
