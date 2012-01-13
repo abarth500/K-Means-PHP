@@ -1,9 +1,11 @@
 ==abarth500 / K-Means-PHP==
 n-dimensional k-Means function for PHP.
+
 https://github.com/abarth500/K-Means-PHP
 
+
 ===Usage===
-<code>
+<pre>
 <?php
 include_once(kmeans.php);
 $result = kmeans(array(
