@@ -1,10 +1,10 @@
-==abarth500 / K-Means-PHP==
+###abarth500 / K-Means-PHP==
 n-dimensional k-Means function for PHP.
 
 https://github.com/abarth500/K-Means-PHP
 
 
-===Usage===
+###Usage===
 <pre><code>
 <?php
 
